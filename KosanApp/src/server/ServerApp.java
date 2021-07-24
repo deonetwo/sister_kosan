@@ -17,63 +17,44 @@ import model.Pembayaran;
 import model.Pemesan;
 
 public class ServerApp extends UnicastRemoteObject implements IKosanApp {
-	// private Database db;
-	private ArrayList<Kosan> listKosan;
-	private ArrayList<Kamar> listKamar;
-	private ArrayList<Pembayaran> listPembayaran;
-
+	private Database db;
 
 	public ServerApp() throws RemoteException {
 		super();
-		// db = Database.getDbInstance();
-
-		listKosan = new ArrayList<Kosan>();
-		listKamar = new ArrayList<Kamar>();
-		listPembayaran = new ArrayList<Pembayaran>(); // empty on first instance, no payment had been made
-
-		// add some Kosan
-		listKosan.add(new Kosan("K01", "Sudarsono", "555-556-123", 
-						new AlamatKost("Jl. Ciwastra Komplek Ciwastra Endah no. 3", "01", "02", "Manjahlega", "Buah Batu", "Bandung")));
-		listKosan.add(new Kosan("K02", "Darul Budiman", "987-556-123", 
-						new AlamatKost("Jl. Sarimanis II no. 12", "08", "03", "Turangga", "Lengkong", "Bandung")));
-		listKosan.add(new Kosan("K03", "Rexa Iwan", "555-765-123", 
-						new AlamatKost("Gang Terasana no. 79", "05", "04", "Cisaranten Kulon", "Arcamanik", "Bandung")));
-
-		// add Kamar to Kosan K01
-		listKamar.add(new Kamar("K01", "Tipe A", 600000.0, 3, 
-						"Kosan sekitar SD Pasir Pogor. Adem. Termasuk biaya listrik. Kamar mandi bersama. Tidak ada jam malam.",
-						3.0, 2.5));
-		listKamar.add(new Kamar("K01", "Tipe B", 750000.0, 1, 
-						"Kosan sekitar SD Pasir Pogor. Adem. Termasuk biaya listrik dan Wifi. Kamar mandi dalam. Tidak ada jam malam.",
-						4.0, 3.0));
-		
-		// add Kamar to Kosan K02
-		listKamar.add(new Kamar("K01", "Tipe B", 750000.0, 1, 
-						"Kosan sekitar SD Pasir Pogor. Adem. Termasuk biaya listrik dan Wifi. Kamar mandi dalam. Tidak ada jam malam.",
-						4.0, 3.0));
+		db = Database.getDbInstance();
 	}
 
 	public static void main(String[] args) throws RemoteException, AlreadyBoundException {
+		int port = 7777;
 		try {
-			Registry registry = LocateRegistry.createRegistry(7777);
-			registry.bind("squared", new ServerApp());
-			System.out.println("The Server is running fast as fu*k..");
-		}
-		catch(Exception e) {
-			System.out.println("ERROR: HAHA!");
+			Registry registry = LocateRegistry.createRegistry(port);
+			registry.bind("kosan", new ServerApp());
+			System.out.println("Sever listening to port " + port);
+		} catch (Exception e) {
+			System.out.println("ERROR: Server failed to running..");
 			e.printStackTrace();
 		}
 	}
 
 	@Override
 	public ArrayList<Kamar> getListKamar() throws RemoteException {
-		return this.listKamar;
+		System.out.println("[SUCCESS]" + LocalDateTime.now() + " Retrive List Kamar");
+		return db.getListKamar();
 	}
 
 	@Override
-	public void performPesanKamar(int id_kamar, LocalDateTime tanggal_pembayaran, double total_pembayaran,
-			int jumlah_bulan_dipesan, Pemesan pemesan) throws RemoteException {
-		// TODO Auto-generated method stub
-		
+	public boolean performPesanKamar(int id_kamar, LocalDateTime tanggal_pembayaran, double total_pembayaran,
+		int jumlah_bulan_dipesan, Pemesan pemesan) throws RemoteException {
+		// insert mutex di database
+		if(db.getKamarById(id_kamar).kurangiStokKamar()) {
+			System.out.println("[SUCCESS (Pesan Kamar)]" + tanggal_pembayaran + " Pemesan: " + pemesan.nama_pemesan 
+					+ " Memesan kamar dengan id=" + id_kamar + " Total Bayar: " + total_pembayaran);
+			return true;
+		}
+		else {
+			System.out.println("[FAILED (Pesan Kamar)]" + tanggal_pembayaran + " Pemesan: " + pemesan.nama_pemesan 
+					+ " Memesan kamar dengan id=" + id_kamar + " Total Bayar: " + total_pembayaran);
+			return false;
+		}
 	}
 }

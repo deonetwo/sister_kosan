@@ -1,12 +1,14 @@
 package model;
 
-public class Pemesan {
+import java.io.Serializable;
+
+public class Pemesan implements Serializable{
 	public String nama_pemesan;
     public String no_telepon_pemesan;
     public String email;
 
-    public Pemesan(String nama_pemasanan,String no_telepon_pemesan, String email){
-        this.nama_pemesan=nama_pemesan;
+    public Pemesan(String nama_pemesan,String no_telepon_pemesan, String email){
+        this.nama_pemesan= nama_pemesan;
         this.no_telepon_pemesan = no_telepon_pemesan;
         this.email=email;
     }
